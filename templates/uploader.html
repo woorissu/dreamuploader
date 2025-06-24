@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ display_name }} 사진 업로더</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .upload-status {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .upload-status.complete::after {
+      content: " ✔️";
+      color: green;
+    }
+    label.customer-label {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      display: block;
+    }
+    #customerName {
+      padding: 10px;
+      font-size: 16px;
+      width: 300px;
+      margin-bottom: 30px;
+    }
+    .upload-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .thumb-box {
+      width: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      transition: border 0.3s;
+    }
+    .thumb-box.complete {
+      border: 3px solid #0ace03;
+    }
+    .thumb-img {
+      width: 180px;
+      height: 100px;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .upload-input {
+      margin: 6px 0;
+      width: 180px;
+    }
+    .upload-button {
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .checkmark {
+      font-size: 22px;
+      color: rgb(0, 177, 0);
+      margin-top: 4px;
+    }
+    .desc-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      text-align: center;
+      word-break: keep-all;
+    }
+  </style>
+</head>
+<body>
+  <h1>🖼️ {{ display_name }} 제작 사진 업로더</h1>
+<div class="subtitle" style="line-height: 1.7;">
+  ✦ 사진은 한 컷씩 업로드해주세요. '업로드하기'를 누르면 임시저장됩니다.<br>
+  ✦ 체크표시가 뜨면 업로드 완료된 사진입니다.<br>
+  ✦ 하단 설명은 샘플 영상의 컷 구성입니다. 참고해 선택해주세요.<br>
+  ✦ 재업로드 시 기존 사진은 덮어씌워집니다.<br>
+  ✦ 사진은 꿈꾸다 Drive에 저장되며, 영업일 오전에 순차 확인 해 개별 연락드립니다.<br>
+  ✦ 오류 시 <a href="mailto:info@dream-ing.kr">info@dream-ing.kr</a> 또는 
+  <a href="http://pf.kakao.com/_qzxanV/chat" target="_blank" style="color:#3366cc; text-decoration: underline;">카카오톡 @꿈꾸다</a>로 보내주세요.<br>
+  ✦ 업로더/메일/카톡 중 어느 경로로든 사진만 확인되면 제작 가능합니다.
+</div>
+
+
+
+
+<!-- 안내 메시지 -->
+<label class="customer-label">👤 '주문자-주인공' 이름을 적어주세요</label>
+<input type="text" id="customerName" placeholder="예: 홍길동-홍길순" style="margin-bottom: 4px;">
+<div style="font-size: 14px; color: #888;">
+  * 위 이름이 업로드 폴더명으로 사용되므로 변경하지 마세요.
+</div>
+
+<!-- 구분선 -->
+<hr style="border: none; border-top: 1px dashed #ccc; margin: 24px 0 12px 0;">
+
+<!-- 업로드 완료 갯수 | 초기화 버튼 -->
+<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+  <div id="uploadStatus"
+       style="font-size: 17px; font-weight: bold; height: 32px; display: flex; align-items: center;">
+    38 중 0개 업로드 완료
+  </div>
+  <div style="height: 16px; width: 3px; background-color: #ccc;"></div>
+  <button onclick="resetUploads()"
+          style="font-size: 13px; height: 32px; padding: 0 12px; display: flex; align-items: center;">
+    🗑 업로드 초기화
+  </button>
+</div>
+
+
+  <!-- 총 컷 수 -->
+  <span id="totalCount" style="display:none;">{{ photo_list | length }}</span>
+
+  <div class="upload-grid">
+    {% for photo in photo_list %}
+      <div class="thumb-box" id="box-{{ photo.id }}">
+        <img class="thumb-img" src="/thumbs/{{ photo.id }}.jpg" alt="{{ photo.desc or '썸네일' }}">
+        <strong>{{ photo.id }}</strong>
+        <input type="file" id="file-{{ photo.id }}" class="upload-input">
+        <button class="upload-button" onclick="uploadFile('{{ photo.id }}')">업로드하기</button>
+        <div id="check-{{ photo.id }}" class="checkmark"></div>
+        <div class="desc-text">{{ photo.desc }}</div>
+        <img id="preview-{{ photo.id }}" class="thumb-img" style="margin-top:10px; display:none;" alt="업로드 미리보기">
+      </div>
+    {% endfor %}
+  </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const total = parseInt(document.getElementById('totalCount').innerText, 10);
+        let uploaded = 0;
+        const uploadedSet = new Set();
+
+        function updateStatus() {
+            const status = document.getElementById('uploadStatus');
+            status.textContent = `${total} 중 ${uploaded}개 업로드 완료`;
+        }
+
+        function saveToLocal(photoId, dataUrl) {
+            localStorage.setItem(`preview_${photoId}`, dataUrl);
+        }
+
+        function saveUploaded(photoId) {
+            localStorage.setItem(`uploaded_${photoId}`, "true");
+        }
+
+        function loadFromLocal(photoId) {
+            return localStorage.getItem(`preview_${photoId}`);
+        }
+
+        function isUploaded(photoId) {
+            return localStorage.getItem(`uploaded_${photoId}`) === "true";
+        }
+
+        window.uploadFile = function (photoId, fileOverride = null) {
+            const fileInput = document.getElementById('file-' + photoId);
+            const file = fileOverride || fileInput.files[0];
+            if (!file) {
+                alert('사진을 먼저 선택해주세요!');
+                return;
+            }
+
+            const customerName = document.getElementById('customerName').value.trim();
+            if (!customerName) {
+                alert('주문자-주인공 이름을 입력해주세요!');
+                return;
+            }
+
+            let finalFile = file;
+            if (!file.name.includes('.')) {
+                finalFile = new File([file], file.name + '.jpg', { type: file.type });
+            }
+
+            const formData = new FormData();
+            formData.append('file', finalFile);
+            formData.append('customer_name', customerName);
+
+            fetch(`/upload_file/{{ sample }}/${photoId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.text())
+            .then(msg => {
+                alert(`${photoId} 업로드 결과: ${msg}`);
+                document.getElementById('check-' + photoId).innerText = '✔️';
+                document.getElementById('box-' + photoId).classList.add('complete');
+                saveUploaded(photoId);
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImg = document.getElementById('preview-' + photoId);
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    saveToLocal(photoId, e.target.result);
+                };
+                reader.readAsDataURL(finalFile);
+
+                if (!uploadedSet.has(photoId)) {
+                    uploadedSet.add(photoId);
+                    uploaded++;
+                    updateStatus();
+                }
+            })
+            .catch(err => {
+                alert(`❌ 오류 발생: ${err}`);
+            });
+        };
+
+        // ✅ 업로드 상태 복원
+        {% for photo in photo_list %}
+            const savedPreview_{{ photo.id }} = loadFromLocal("{{ photo.id }}");
+            if (savedPreview_{{ photo.id }}) {
+                const previewImg = document.getElementById("preview-{{ photo.id }}");
+                previewImg.src = savedPreview_{{ photo.id }};
+                previewImg.style.display = 'block';
+            }
+
+            if (isUploaded("{{ photo.id }}")) {
+                document.getElementById('check-{{ photo.id }}').innerText = '✔️';
+                document.getElementById('box-{{ photo.id }}').classList.add('complete');
+                uploadedSet.add("{{ photo.id }}");
+                uploaded++;
+            }
+        {% endfor %}
+
+        updateStatus();
+
+        // ✅ 주문자 이름도 로컬스토리지에 저장/복원
+        const nameInput = document.getElementById('customerName');
+        const storedName = localStorage.getItem('customer_name');
+        if (storedName) {
+            nameInput.value = storedName;
+        }
+
+        nameInput.addEventListener('input', function () {
+            localStorage.setItem('customer_name', nameInput.value.trim());
+        });
+
+        // ✅ 초기화 버튼 함수
+        window.resetUploads = function () {
+            if (confirm('정말 초기화하시겠습니까?\n브라우저 기록이 삭제되며 새로고침됩니다.')) {
+                localStorage.clear();
+                location.reload();
+            }
+        };
+    });
+</script>
+
+</body>
+</html>
