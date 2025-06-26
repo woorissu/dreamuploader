@@ -89,22 +89,21 @@
 </head>
 <body>
   <h1>🖼️ {{ display_name }} 제작 사진 업로더</h1>
-<div class="subtitle" style="line-height: 1.7;">
-  ✦ 사진은 한 컷씩 업로드해주세요. '업로드하기'를 누르면 임시저장됩니다.<br>
-  ✦ 체크표시가 뜨면 업로드 완료된 사진입니다.<br>
-  ✦ 하단 설명은 샘플 영상의 컷 구성입니다. 참고해 선택해주세요.<br>
-  ✦ 재업로드 시 기존 사진은 덮어씌워집니다.<br>
-  ✦ 사진은 꿈꾸다 Drive에 저장되며, 영업일 오전에 순차 확인 해 개별 연락드립니다.<br>
-  ✦ 오류 시 <a href="mailto:info@dream-ing.kr">info@dream-ing.kr</a> 또는 
-  <a href="http://pf.kakao.com/_qzxanV/chat" target="_blank" style="color:#3366cc; text-decoration: underline;">카카오톡 @꿈꾸다</a>로 보내주세요.<br>
-  ✦ 업로더/메일/카톡 중 어느 경로로든 사진만 확인되면 제작 가능합니다.
-</div>
+  <div class="subtitle" style="line-height: 1.7;">
+  📌 <strong>사진은 한 컷씩 업로드</strong> 후, '업로드하기' 버튼을 꼭 눌러주세요.<br>
+  📌 <strong>처음 업로드 시</strong> 몇 초간 로딩이 걸릴 수 있습니다.<br>
+  📌 <strong>업로드된 후엔 임시저장</strong>되어 중단 후 다시 접속해도 이어서 작업 가능합니다.<br>
+  📌 <strong>'주문자-주인공' 이름은</strong> 업로드 폴더명이 되므로 <u>변경하지 마세요</u>.<br>
+  📌 <strong>재업로드 시</strong> 기존 파일은 자동으로 <u>덮어씌워집니다</u>.<br>
+  📌업로드된 자료는 꿈꾸다 <strong>드라이브</strong>에 저장되며, 영업일 오전 순차 확인 후 개별 연락드립니다.<br><br>
 
-
-
+  ❗ 오류 시 <a href="mailto:info@dream-ing.kr">info@dream-ing.kr</a> 또는
+  <a href="http://pf.kakao.com/_qzxanV/chat" target="_blank" style="color:#3366cc;">카카오톡 @꿈꾸다</a> 로 문의해주세요.<br>
+  📦 <strong>업로더/메일/카톡 중</strong> 셋중 편하신 곳으로 보내주세요. 어느곳이든 확인만돼면 제작 가능합니다. </div>
 
 <!-- 안내 메시지 -->
 <label class="customer-label">👤 '주문자-주인공' 이름을 적어주세요</label>
+
 <input type="text" id="customerName" placeholder="예: 홍길동-홍길순" style="margin-bottom: 4px;">
 <div style="font-size: 14px; color: #888;">
   * 위 이름이 업로드 폴더명으로 사용되므로 변경하지 마세요.
@@ -133,7 +132,7 @@
   <div class="upload-grid">
     {% for photo in photo_list %}
       <div class="thumb-box" id="box-{{ photo.id }}">
-        <img class="thumb-img" src="/thumbs/{{ photo.id }}.jpg" alt="{{ photo.desc or '썸네일' }}">
+        <img class="thumb-img" src="/thumbs/{{ sample }}/{{ photo.id }}.jpg" alt="{{ photo.desc or '썸네일' }}">
         <strong>{{ photo.id }}</strong>
         <input type="file" id="file-{{ photo.id }}" class="upload-input">
         <button class="upload-button" onclick="uploadFile('{{ photo.id }}')">업로드하기</button>

@@ -4,16 +4,12 @@ import json
 import os
 from drive_upload import upload_to_drive  # 📌 Google Drive 업로드 함수
 
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# 🔹 썸네일 + 업로드 페이지
+# 🔹 업로더 페이지
 @app.route('/upload/<sample>')
 def upload(sample):
-    config_path = os.path.join('sample_config', f'{sample}.json')
+    config_path = os.path.join('products', sample, 'config.json')
 
     if not os.path.exists(config_path):
         return f'❌ 샘플 \"{sample}\" 구성 파일이 존재하지 않습니다.'
@@ -27,11 +23,12 @@ def upload(sample):
     return render_template("uploader.html", sample=sample, display_name=display_name, photo_list=photo_list)
 
 # 🔹 썸네일 이미지 제공
-@app.route('/thumbs/<filename>')
-def thumbs(filename):
-    return send_from_directory('static/thumbs', filename)
+@app.route('/thumbs/<sample>/<filename>')
+def thumbs(sample, filename):
+    thumb_path = os.path.join('products', sample, 'thumbnails')
+    return send_from_directory(thumb_path, filename)
 
-# 🔹 파일 업로드 처리 → Google Drive 업로드
+# 🔹 파일 업로드 처리 → Google Drive 업로드 (메모리 스트림)
 @app.route('/upload_file/<sample>/<photo_id>', methods=['POST'])
 def handle_file_upload(sample, photo_id):
     if 'file' not in request.files:
@@ -46,11 +43,10 @@ def handle_file_upload(sample, photo_id):
         return '❌ 주문자 이름이 없습니다.', 400
 
     filename = secure_filename(photo_id + '.jpg')
-    local_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(local_path)
 
     try:
-        upload_to_drive(local_path, filename, customer_name)
+        # ✅ 파일을 로컬에 저장하지 않고, 메모리에서 바로 업로드
+        upload_to_drive(file.stream, filename, customer_name)
         return f'✅ {filename} 업로드 성공!'
     except Exception as e:
         return f'❌ 업로드 실패: {e} 카톡으로 문의주세요', 500
