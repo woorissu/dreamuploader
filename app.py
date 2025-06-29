@@ -20,6 +20,8 @@ def upload(sample):
     display_name = config.get("display_name", sample)
     photo_list = config.get("photos", [])
 
+    print(f"📂 로딩된 config for {sample}: {photo_list}")
+
     return render_template("uploader.html", sample=sample, display_name=display_name, photo_list=photo_list)
 
 # 🔹 썸네일 이미지 제공
