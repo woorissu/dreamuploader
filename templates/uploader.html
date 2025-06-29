@@ -92,7 +92,7 @@
   <div class="subtitle" style="line-height: 1.7;">
   📌 <strong>사진은 한 컷씩 업로드</strong> 후, '업로드하기' 버튼을 꼭 눌러주세요.<br>
   📌 <strong>처음 업로드 시</strong> 몇 초간 로딩이 걸릴 수 있습니다.<br>
-  📌 <strong>업로드한 사진이 보여지면 임시저장</strong>되었으니 같은 브라우저라면 나중에 이어서 작업 가능합니다.<br>
+  📌 업로드한 사진이 보여지면 <strong>임시저장</strong>되었으니 <strong>같은 브라우저에서는</strong> 이어서 작업 가능합니다.<br>
   📌 <strong>재업로드 시</strong> 기존 파일은 자동으로 덮어씌워집니다.<br>
   📌 <strong>'주문자-주인공' 이름은</strong> 업로드 폴더명이 되므로 <u>변경하지 마세요</u>.<br>
   📌 <strong>최초 업로드에만</strong> 사용하는 창입니다. 시안받아보시고 수정단계라면 카카오톡으로 말씀해주세요.<br>
@@ -152,6 +152,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let uploaded = 0;
   const uploadedSet = new Set();
 
+  const driveLinkEl = document.getElementById("driveFolderLink");
+
   function updateStatus() {
     const status = document.getElementById('uploadStatus');
     status.textContent = `${total} 중 ${uploaded}개 업로드 완료`;
@@ -171,6 +173,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function isUploaded(photoId) {
     return localStorage.getItem(`uploaded_${photoId}`) === "true";
+  }
+
+  function saveFolderLinkToLocal(link) {
+    localStorage.setItem("drive_folder_link", link);
   }
 
   window.uploadFile = function (photoId, fileOverride = null) {
@@ -223,10 +229,13 @@ document.addEventListener("DOMContentLoaded", function () {
           updateStatus();
         }
 
-        // ✅ 하단 드라이브 링크 갱신
+        // ✅ 폴더 링크 저장 및 하단 링크 갱신
         if (data.folder_link) {
-          document.getElementById('driveFolderLink').href = data.folder_link;
+          driveLinkEl.href = data.folder_link;
+          driveLinkEl.style.display = 'inline-block';
+          saveFolderLinkToLocal(data.folder_link);
         }
+
       } else {
         alert(`❌ 업로드 실패: ${data.message || '알 수 없는 오류'}`);
       }
@@ -254,6 +263,13 @@ document.addEventListener("DOMContentLoaded", function () {
   {% endfor %}
 
   updateStatus();
+
+  // ✅ 폴더 링크 복원
+  const storedLink = localStorage.getItem("drive_folder_link");
+  if (storedLink) {
+    driveLinkEl.href = storedLink;
+    driveLinkEl.style.display = 'inline-block';
+  }
 
   // ✅ 주문자 이름 로컬 저장/복원
   const nameInput = document.getElementById('customerName');
@@ -284,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <!-- 추가 자료 업로드 섹션 -->
 <div id="extra-upload-section" style="text-align: center;">
-  <h3 style="font-size: 18px; margin-bottom: 10px;">📂 추가 자료 업로드</h3>
+  <h3 style="font-size: 18px; margin-bottom: 10px;"> 🔍 업로드된 자료 확인하기</h3>
 
   <!-- 버튼: 드라이브 링크 열기 -->
   <a id="driveFolderLink" href="#" target="_blank" style="
@@ -297,7 +313,7 @@ document.addEventListener("DOMContentLoaded", function () {
       color: #333;
       text-decoration: none;
       border: 1px solid #ccc;
-    ">🔍 업로드된 자료 확인하기</a>
+    ">📂내 폴더보기</a>
 
   <!-- 설명 텍스트 -->
   <div style="margin-top: 12px; font-size: 13px; color: #777; line-height: 1.6;">
