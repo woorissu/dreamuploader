@@ -34,15 +34,15 @@ def thumbs(sample, filename):
 @app.route('/upload_file/<sample>/<photo_id>', methods=['POST'])
 def handle_file_upload(sample, photo_id):
     if 'file' not in request.files:
-        return '❌ 파일이 없습니다.', 400
+        return jsonify({'status': 'error', 'message': '파일이 없습니다.'}), 400
 
     file = request.files['file']
     if file.filename == '':
-        return '❌ 파일 이름이 없습니다.', 400
+        return jsonify({'status': 'error', 'message': '파일 이름이 없습니다.'}), 400
 
     customer_name = request.form.get('customer_name')
     if not customer_name:
-        return '❌ 주문자 이름이 없습니다.', 400
+        return jsonify({'status': 'error', 'message': '주문자 이름이 없습니다.'}), 400
 
     filename = secure_filename(photo_id + '.jpg')
 
@@ -55,7 +55,7 @@ def handle_file_upload(sample, photo_id):
             'folder_link': folder_link
         })
     except Exception as e:
-        return f'❌ 업로드 실패: {e} 카톡으로 문의주세요', 500
+        return jsonify({'status': 'error', 'message': f'업로드 실패: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
