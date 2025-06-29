@@ -92,7 +92,7 @@
   <div class="subtitle" style="line-height: 1.7;">
   📌 <strong>사진은 한 컷씩 업로드</strong> 후, '업로드하기' 버튼을 꼭 눌러주세요.<br>
   📌 <strong>처음 업로드 시</strong> 몇 초간 로딩이 걸릴 수 있습니다.<br>
-  📌 <strong>업로드한 사진이 보여지면 임시저장</strong>되었으니 다시 접속해도 이어서 작업 가능합니다.<br>
+  📌 <strong>업로드한 사진이 보여지면 임시저장</strong>되었으니 같은 브라우저라면 나중에 이어서 작업 가능합니다.<br>
   📌 <strong>재업로드 시</strong> 기존 파일은 자동으로 덮어씌워집니다.<br>
   📌 <strong>'주문자-주인공' 이름은</strong> 업로드 폴더명이 되므로 <u>변경하지 마세요</u>.<br>
   📌 <strong>최초 업로드에만</strong> 사용하는 창입니다. 시안받아보시고 수정단계라면 카카오톡으로 말씀해주세요.<br>
@@ -198,26 +198,37 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.text())
-            .then(msg => {
-                alert(`${photoId} 업로드 결과: ${msg}`);
-                document.getElementById('check-' + photoId).innerText = '✔️';
-                document.getElementById('box-' + photoId).classList.add('complete');
-                saveUploaded(photoId);
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${photoId} 업로드 결과: ${data.message}`);
+                    document.getElementById('check-' + photoId).innerText = '✔️';
+                    document.getElementById('box-' + photoId).classList.add('complete');
+                    saveUploaded(photoId);
 
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const previewImg = document.getElementById('preview-' + photoId);
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                    saveToLocal(photoId, e.target.result);
-                };
-                reader.readAsDataURL(finalFile);
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const previewImg = document.getElementById('preview-' + photoId);
+                        previewImg.src = e.target.result;
+                        previewImg.style.display = 'block';
+                        saveToLocal(photoId, e.target.result);
+                    };
+                    reader.readAsDataURL(finalFile);
 
-                if (!uploadedSet.has(photoId)) {
-                    uploadedSet.add(photoId);
-                    uploaded++;
-                    updateStatus();
+                    if (!uploadedSet.has(photoId)) {
+                        uploadedSet.add(photoId);
+                        uploaded++;
+                        updateStatus();
+                    }
+
+                    // ✅ 드라이브 폴더 링크 삽입
+                    if (data.folder_url) {
+                        const driveLink = document.getElementById('driveFolderLink');
+                        driveLink.href = data.folder_url;
+                        driveLink.style.display = 'inline-block';
+                    }
+                } else {
+                    alert(`❌ 업로드 실패: ${data.message}`);
                 }
             })
             .catch(err => {
@@ -264,6 +275,37 @@
         };
     });
 </script>
+
+<!-- 구분선 -->
+<hr style="margin: 40px 0 20px 0; border-top: 1px dashed #ccc;">
+
+<!-- 추가 자료 업로드 섹션 -->
+<div id="extra-upload-section" style="text-align: center;">
+  <h3 style="font-size: 18px; margin-bottom: 10px;">📂 추가 자료 업로드</h3>
+
+  <!-- 버튼: 드라이브 링크 열기 -->
+  <a id="driveFolderLink" href="#" target="_blank" style="
+      display: inline-block;
+      padding: 10px 18px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #333;
+      text-decoration: none;
+      border: 1px solid #ccc;
+    ">🔗 드라이브 폴더 열기</a>
+
+  <!-- 설명 텍스트 -->
+  <div style="margin-top: 12px; font-size: 13px; color: #777; line-height: 1.6;">
+    고객님께서 업로드하신 사진은 <strong>전용 폴더</strong>에 저장됩니다.<br>
+    영상편지 용 동영상 등 추가 자료가 있다면, 위 폴더에 업로드해주세요.<br>
+    고용량 파일은 <strong>업로드에 다소 시간이 걸릴 수 있습니다.</strong><br>
+    해당 링크는 고객님만 접근할 수 있으며, 외부에는 공개되지 않습니다.<br>
+    문제가 생긴다면 카카오톡 혹은 메일로 따로 보내주세요!
+  </div>
+</div>
+
 
 </body>
 </html>

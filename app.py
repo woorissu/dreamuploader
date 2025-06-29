@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request
+from flask import Flask, render_template, send_from_directory, request, jsonify
 from werkzeug.utils import secure_filename
 import json
 import os
@@ -30,7 +30,7 @@ def thumbs(sample, filename):
     thumb_path = os.path.join('products', sample, 'thumbnails')
     return send_from_directory(thumb_path, filename)
 
-# 🔹 파일 업로드 처리 → Google Drive 업로드 (메모리 스트림)
+# 🔹 파일 업로드 처리 → Google Drive 업로드 + 폴더 링크 반환
 @app.route('/upload_file/<sample>/<photo_id>', methods=['POST'])
 def handle_file_upload(sample, photo_id):
     if 'file' not in request.files:
@@ -47,9 +47,13 @@ def handle_file_upload(sample, photo_id):
     filename = secure_filename(photo_id + '.jpg')
 
     try:
-        # ✅ 파일을 로컬에 저장하지 않고, 메모리에서 바로 업로드
-        upload_to_drive(file.stream, filename, customer_name)
-        return f'✅ {filename} 업로드 성공!'
+        # ✅ 드라이브 업로드 후 폴더 링크 반환
+        folder_link = upload_to_drive(file.stream, filename, customer_name)
+        return jsonify({
+            'status': 'ok',
+            'filename': filename,
+            'folder_link': folder_link
+        })
     except Exception as e:
         return f'❌ 업로드 실패: {e} 카톡으로 문의주세요', 500
 
